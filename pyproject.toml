@@ -1,0 +1,30 @@
+[project]
+name = "travel-itinerary-agent"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "AbdelhadiOumar", email = "abdelhadioumar@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "gradio>=6.29.0",
+    "httpx>=0.28.1",
+    "openai-agents>=0.22.3",
+    "pydantic>=2.13.5",
+    "python-dotenv>=1.2.3",
+]
+
+[project.scripts]
+travel-itinerary-agent = "travel_itinerary_agent:main"
+
+[build-system]
+requires = ["uv_build>=0.12.19,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.4.0",
+    "jupyter>=1.1.1",
+    "pytest>=9.1.1",
+]
