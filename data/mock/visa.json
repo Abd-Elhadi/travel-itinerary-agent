@@ -1,0 +1,14 @@
+{
+    "FRA-JPN": {
+        "passport": "FRA",
+        "destination": "JPN",
+        "requirement": "visa_free",
+        "visa_free_days": 90
+    },
+    "USA-JPN": {
+        "passport": "USA",
+        "destination": "JPN",
+        "requirement": "visa_free",
+        "visa_free_days": 90
+    }
+}
