@@ -2,10 +2,10 @@ from agents import Agent, WebSearchTool
 
 from datetime import date
 
-from travel_agent.config import MODEL
-from travel_agent.models import ActivityPlan
-from travel_agent.tools.places import search_places
-from travel_agent.tools.weather import get_weather
+from src.travel_agent.config import MODEL
+from src.travel_agent.models import ActivityPlan
+from src.travel_agent.tools.places import search_places
+from src.travel_agent.tools.weather import get_weather
 
 INSTRUCTIONS = f"""You are the activities agent. Input: destination, dates, travelers, budget, interests, trip type.
 Today is {date.today().isoformat()}.
