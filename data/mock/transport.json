@@ -1,0 +1,17 @@
+{
+    "notice": "Synthetic demo data only. These are not real flight quotes.",
+    "flights": [
+      {
+        "name": "Sample economy option A",
+        "round_trip_usd_per_adult": 800
+      },
+      {
+        "name": "Sample economy option B",
+        "round_trip_usd_per_adult": 950
+      },
+      {
+        "name": "Sample economy option C",
+        "round_trip_usd_per_adult": 1100
+      }
+    ]
+  }
