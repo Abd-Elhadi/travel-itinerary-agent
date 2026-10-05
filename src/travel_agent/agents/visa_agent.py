@@ -2,7 +2,7 @@ from agents import Agent
 
 from src.travel_agent.config import MODEL
 from src.travel_agent.models import VisaResult
-from src.travel_agent.tools.visa import check_visa
+from src.travel_agent.tools.visa_tool import check_visa
 
 INSTRUCTIONS = """You are the visa agent. Input: passport country and destination country, as names or codes.
 1. Call check_visa once with the passport country and destination country as given.
