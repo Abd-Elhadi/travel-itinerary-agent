@@ -1,0 +1,44 @@
+{
+    "Japan": [
+      {
+        "name": "Sample Tokyo City Hotel",
+        "area": "Tokyo",
+        "nightly_price_usd": 125,
+        "why": "Sample central option with convenient access to restaurants, transit, and major attractions."
+      },
+      {
+        "name": "Sample Kyoto Guesthouse",
+        "area": "Kyoto",
+        "nightly_price_usd": 85,
+        "why": "Sample value option near traditional neighborhoods and temple areas."
+      },
+      {
+        "name": "Sample Osaka Food District Hotel",
+        "area": "Osaka",
+        "nightly_price_usd": 110,
+        "why": "Sample option for food-focused travelers with easy access to city transport."
+      }
+    ],
+    "Italy": [
+      {
+        "name": "Sample Rome Central Hotel",
+        "area": "Rome",
+        "nightly_price_usd": 145,
+        "why": "Sample central accommodation option for historic sightseeing."
+      },
+      {
+        "name": "Sample Florence Guesthouse",
+        "area": "Florence",
+        "nightly_price_usd": 120,
+        "why": "Sample value option near museums and walkable historic areas."
+      }
+    ],
+    "default": [
+      {
+        "name": "Sample Central Hotel",
+        "area": "City center",
+        "nightly_price_usd": 120,
+        "why": "Sample centrally located accommodation option."
+      }
+    ]
+  }
