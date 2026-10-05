@@ -2,6 +2,8 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+##from travel_agent.models import ActivityPlan, TripRequest, VisaResult
+
 class TripRequest(BaseModel):
     trip_type: Literal["leisure", "business"] | None
     passport_country: str | None
