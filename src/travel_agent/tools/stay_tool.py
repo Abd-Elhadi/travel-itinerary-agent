@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+import math
 
 from agents import function_tool
 
@@ -19,7 +20,8 @@ def search_stays_raw(destination: str, nights: int, travelers: int) -> dict:
     results = []
 
     for option in options:
-        total_cost = round(option["nightly_price_usd"] * nights, 2)
+        rooms = math.ceil(travelers / 2)
+        total_cost = round(option["nightly_price_usd"] * nights * rooms, 2)
 
         results.append(
             {
