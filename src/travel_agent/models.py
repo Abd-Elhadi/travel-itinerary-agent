@@ -38,6 +38,7 @@ class VisaResult(BaseModel):
 class Activity(BaseModel):
     name: str
     category: str
+    city: str
     why: str
     estimated_cost_usd: float | None
     duration_hours: float | None
@@ -110,4 +111,5 @@ class TripPlan(BaseModel):
     stay: StayPlan
     budget: BudgetReport
     itinerary: Itinerary
+    warnings: list[str] = []
  

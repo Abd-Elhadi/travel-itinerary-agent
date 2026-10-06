@@ -4,6 +4,7 @@ from travel_agent.agents.activities_agent import run_activities_agent
 from travel_agent.models import TripRequest
 
 
+@pytest.mark.live
 @pytest.mark.asyncio
 async def test_activities_returns_plan():
     trip = TripRequest(

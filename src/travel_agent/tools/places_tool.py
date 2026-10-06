@@ -8,7 +8,7 @@ GEO = "https://api.geoapify.com"
 _cache: dict[str, list] = {}
 
 MOCK_PLACES = [
-    {"name": "Sample Temple", "category": "tourism.sights", "address": "Sample address"},
+    {"name": "Sample Temple", "category": "religion.place_of_worship", "address": "Sample address"},
     {"name": "Sample Museum", "category": "entertainment.museum", "address": "Sample address"},
 ]
 
@@ -24,7 +24,7 @@ def search_places_raw(city: str, category: str, limit: int, radius_m: int) -> di
 
     g = httpx.get(
         f"{GEO}/v1/geocode/search",
-        params={"text": city, "format": "json", "limit": 1, "apiKey": key},
+        params={"text": city, "format": "json", "limit": 1, "lang": "en", "apiKey": key},
         timeout=15,
     )
     g.raise_for_status()
@@ -37,9 +37,11 @@ def search_places_raw(city: str, category: str, limit: int, radius_m: int) -> di
         f"{GEO}/v2/places",
         params={
             "categories": category,
+            "conditions": "named",
             "filter": f"circle:{lon},{lat},{radius_m}",
             "bias": f"proximity:{lon},{lat}",
             "limit": limit,
+            "lang": "en",
             "apiKey": key,
         },
         timeout=15,
@@ -61,13 +63,14 @@ def search_places_raw(city: str, category: str, limit: int, radius_m: int) -> di
 
 
 @function_tool
-def search_places(city: str, category: str = "tourism.sights", limit: int = 8, radius_m: int = 10000) -> str:
+def search_places(city: str, category: str = "tourism.attraction", limit: int = 10, radius_m: int = 10000) -> str:
     """Find places of interest in a city.
 
     Args:
         city: City name, e.g. Kyoto.
-        category: Geoapify category such as tourism.sights, catering.restaurant,
-            entertainment.museum, leisure.park, entertainment.culture, commercial.shopping_mall.
+        category: Geoapify category: tourism.attraction, tourism.sights,
+            religion.place_of_worship, catering.restaurant, entertainment.museum,
+            leisure.park, entertainment.culture.
         limit: Maximum number of places.
         radius_m: Search radius in meters around the city center.
     """

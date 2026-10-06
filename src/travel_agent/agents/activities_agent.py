@@ -11,24 +11,29 @@ from travel_agent.tools.weather_tool import get_weather
 INSTRUCTIONS = f"""You are the activities agent for a travel-planning application.
 Today is {date.today().isoformat()}.
 
-Input contains destination, dates, travelers, budget, interests, and trip type.
+Input contains destination, base city, dates, travelers, budget, interests, and trip type.
 
-1. Choose 1 to 3 suitable destination cities based on the destination,
-   trip length, and interests. If the destination is already a city, use it.
-2. If start_date and end_date are available, call get_weather for the first
-   selected city. If either date is null, do not call weather and state that
-   weather was not checked.
-3. Call search_places for each selected city, choosing categories that match
-   the user's interests.
-4. Return an ActivityPlan with 6 to 10 activities when tool data permits.
-   Return fewer if tool data is limited; never invent places.
-5. Set from_tool=true only for activities returned by search_places.
-6. estimated_cost_usd and duration_hours are estimates; use null when unknown.
-7. Prefer outdoor activities on low-rain days and mention weather in
-   weather_summary.
+1. If a base city is given, use only that city. Otherwise choose one suitable
+   city in the destination for the interests.
+2. If start_date and end_date are set, call get_weather for the city. If either
+   is null, skip weather and say it was not checked.
+3. Call search_places for the city with categories that match the interests:
+   - temples, shrines, churches, religion: religion.place_of_worship
+   - sights, culture, landmarks, history: tourism.attraction
+   - food, restaurants: catering.restaurant
+   - museums, art: entertainment.museum
+   - parks, nature: leisure.park
+   Make at least 3 calls with limit 10 each.
+4. Return an ActivityPlan with 8 to 12 activities when tool data permits.
+   Never invent places. Skip places a traveler would not visit, such as
+   government offices, parking, and generic statues or memorials.
+5. Set city to the city searched. Set from_tool=true for every place that came
+   from search_places.
+6. estimated_cost_usd is a typical per person entry fee or meal cost in USD.
+   Use 0 for free places and null only if truly unknown. duration_hours is an estimate.
+7. Prefer outdoor activities on low-rain days and mention weather in weather_summary.
 8. For business trips, suggest activities under 3 hours near the city center.
-9. If a tool returns mock/sample data, say so clearly in the activity's
-   why field.
+9. If a tool returns mock or sample data, say so in the activity why field.
 """
 
 
@@ -41,20 +46,22 @@ activities_agent = Agent(
 )
 
 
-async def run_activities_agent(trip: TripRequest) -> ActivityPlan:
-    """Run the Activities agent from a completed TripRequest."""
+async def run_activities_agent(trip: TripRequest, base_city: str | None = None) -> ActivityPlan:
+    """Run the Activities agent. base_city is the hotel city, when known."""
 
     if not trip.destination:
         raise ValueError("Activities requires a destination.")
 
+    interests = ", ".join(trip.interests) or "general sightseeing"
     prompt = (
         f"Destination: {trip.destination}. "
+        f"Base city: {base_city or 'not set'}. "
         f"Start date: {trip.start_date}. "
         f"End date: {trip.end_date}. "
         f"Number of days: {trip.num_days}. "
         f"Travelers: {trip.travelers}. "
         f"Budget USD: {trip.budget_usd}. "
-        f"Interests: {', '.join(trip.interests) or 'general sightseeing'}. "
+        f"Interests: {interests}. "
         f"Trip type: {trip.trip_type}."
     )
 

@@ -2,8 +2,8 @@ from datetime import date
 
 from agents import Agent
 
-from src.travel_agent.config import MODEL
-from src.travel_agent.models import IntakeResult
+from travel_agent.config import MODEL
+from travel_agent.models import IntakeResult
 
 INSTRUCTIONS = f"""You are the intake agent of a travel planning assistant. Today is {date.today().isoformat()}.
 Collect trip details through conversation and return the full trip state every turn.
