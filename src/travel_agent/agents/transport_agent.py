@@ -2,9 +2,9 @@ from datetime import date
 
 from agents import Agent
 
-from src.travel_agent.config import MODEL
-from src.travel_agent.models import TransportPlan
-from src.travel_agent.tools.transport_tool import search_flights
+from travel_agent.config import MODEL
+from travel_agent.models import TransportPlan
+from travel_agent.tools.transport_tool import search_flights
 
 
 INSTRUCTIONS = f"""
