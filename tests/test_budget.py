@@ -1,4 +1,4 @@
-from travel_agent.agents.budget import build_budget_report
+from travel_agent.budget import build_budget_report
 from travel_agent.models import (
     Activity,
     ActivityPlan,
@@ -28,31 +28,15 @@ def test_budget_calculates_group_total():
 
     transport = TransportPlan(
         options=[
-            TransportOption(
-                mode="flight",
-                description="Sample return flights for three travelers",
-                cost_usd_total=2400,
-                is_estimate=True,
-            ),
-            TransportOption(
-                mode="local",
-                description="Sample rail and local transport",
-                cost_usd_total=450,
-                is_estimate=True,
-            ),
+            TransportOption(mode="flight", description="Sample return flights", cost_usd_total=2400, is_estimate=True),
+            TransportOption(mode="local", description="Sample rail and local transport", cost_usd_total=450, is_estimate=True),
         ],
         notes="Sample transport data.",
     )
 
     stay = StayPlan(
         options=[
-            StayOption(
-                name="Sample Kyoto Guesthouse",
-                area="Kyoto",
-                total_cost_usd=510,
-                why="Sample value option.",
-                is_estimate=True,
-            )
+            StayOption(name="Sample Kyoto Guesthouse", area="Kyoto", total_cost_usd=510, why="Sample value option.", is_estimate=True)
         ],
         notes="Sample stay estimate.",
     )
@@ -61,37 +45,20 @@ def test_budget_calculates_group_total():
         destination="Japan",
         weather_summary="Sample weather summary.",
         activities=[
-            Activity(
-                name="Sample Temple",
-                category="tourism.sights",
-                why="Matches temple interest.",
-                estimated_cost_usd=20,
-                duration_hours=2,
-                from_tool=True,
-            ),
-            Activity(
-                name="Sample Food Tour",
-                category="food",
-                why="Matches food interest.",
-                estimated_cost_usd=90,
-                duration_hours=3,
-                from_tool=False,
-            ),
+            Activity(name="Sample Temple", category="tourism.sights", city="Kyoto", why="Matches temple interest.",
+                     estimated_cost_usd=20, duration_hours=2, from_tool=True),
+            Activity(name="Sample Food Tour", category="food", city="Kyoto", why="Matches food interest.",
+                     estimated_cost_usd=90, duration_hours=3, from_tool=False),
         ],
     )
 
-    report = build_budget_report(
-        trip=trip,
-        transport=transport,
-        stay=stay,
-        activities=activities,
-    )
+    report = build_budget_report(trip=trip, transport=transport, stay=stay, activities=activities)
 
     assert report.flights_usd == 2400
     assert report.stay_usd == 510
-    assert report.activities_usd == 110
     assert report.local_transport_usd == 450
-    assert report.food_usd == 945
-    assert report.total_usd == 4415
+    assert report.activities_usd == 60    # temple 20 x 3 travelers; food category skipped
+    assert report.food_usd == 945         # 45 x 3 travelers x 7 days
+    assert report.total_usd == 4365
     assert report.within_budget is True
-    assert report.remaining_usd == 1585
+    assert report.remaining_usd == 1635
