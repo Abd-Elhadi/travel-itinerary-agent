@@ -4,6 +4,7 @@ from travel_agent.agents.stay_agent import run_stay_agent
 from travel_agent.models import TripRequest
 
 
+@pytest.mark.live
 @pytest.mark.asyncio
 async def test_stay_returns_options():
     trip = TripRequest(
