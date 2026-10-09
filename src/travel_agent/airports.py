@@ -1,13 +1,14 @@
 import re
 
-# Demo mapping.
+# Demo mapping. Add rows as you add demo trips. Keys are lowercase.
 AIRPORTS: dict[str, str] = {
     # origins
     "miami": "MIA", "hollywood": "MIA", "fort lauderdale": "FLL", "new york": "JFK",
     "chicago": "ORD", "atlanta": "ATL", "los angeles": "LAX", "san francisco": "SFO",
     "des moines": "DSM", "cedar rapids": "CID", "fairfield": "CID",
     # destinations (country keys map to the main international airport)
-    "japan": "NRT", "tokyo": "NRT", "kyoto": "KIX", "osaka": "KIX",
+    # Japan maps to KIX so the demo flight lands near Kyoto.
+    "japan": "KIX", "tokyo": "NRT", "kyoto": "KIX", "osaka": "KIX",
     "france": "CDG", "paris": "CDG", "italy": "FCO", "rome": "FCO",
     "united kingdom": "LHR", "uk": "LHR", "london": "LHR",
     "spain": "MAD", "madrid": "MAD", "barcelona": "BCN", "germany": "FRA",

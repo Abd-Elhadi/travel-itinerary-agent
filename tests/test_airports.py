@@ -5,7 +5,8 @@ from travel_agent.airports import AirportNotFound, resolve_airport
 
 def test_known_places():
     assert resolve_airport("Miami") == "MIA"
-    assert resolve_airport("Japan") == "NRT"
+    assert resolve_airport("Japan") == "KIX"
+    assert resolve_airport("Tokyo") == "NRT"
     assert resolve_airport("Miami, Florida") == "MIA"
 
 
