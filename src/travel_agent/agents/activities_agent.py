@@ -17,16 +17,9 @@ Input contains destination, base city, dates, travelers, budget, interests, and 
    city in the destination for the interests.
 2. If start_date and end_date are set, call get_weather for the city. If either
    is null, skip weather and say it was not checked.
-3. Call search_places for the city with categories that match the interests:
-   - temples, shrines, churches, religion: religion.place_of_worship
-   - sights, culture, landmarks, history: tourism.attraction
-   - food, restaurants: catering.restaurant
-   - museums, art: entertainment.museum
-   - parks, nature: leisure.park
-   Make at least 3 calls with limit 10 each.
-4. Return an ActivityPlan with 8 to 12 activities when tool data permits.
-   Never invent places. Skip places a traveler would not visit, such as
-   government offices, parking, and generic statues or memorials.
+3. Call search_places with the category list above. Make at least 5 calls with limit 20 each.
+4. Return between 2 x num_days and 3 x num_days activities, restaurants included, when tool data permits. 
+    Never invent places. Skip places a traveler would not visit.
 5. Set city to the city searched. Set from_tool=true for every place that came
    from search_places.
 6. estimated_cost_usd is a typical per person entry fee or meal cost in USD.
