@@ -32,6 +32,10 @@ def _itinerary(**overrides):
     return Itinerary(**base)
 
 
+def _days(*item_lists):
+    return [DayPlan(day=i + 1, date=None, city="Kyoto", items=items) for i, items in enumerate(item_lists)]
+
+
 def test_good_itinerary_has_no_problems():
     assert check_itinerary(_itinerary(), _ctx()) == []
 
@@ -49,8 +53,7 @@ def test_wrong_city():
 
 
 def test_alternative_hotel_mentioned():
-    days = [DayPlan(day=1, date=None, city="Kyoto", items=["Check in at Sample Tokyo City Hotel"]),
-            DayPlan(day=2, date=None, city="Kyoto", items=["Depart"])]
+    days = _days(["Check in at Sample Tokyo City Hotel"], ["Depart"])
     problems = check_itinerary(_itinerary(days=days), _ctx())
     assert any("Alternative hotel" in p for p in problems)
 
@@ -60,7 +63,7 @@ def test_budget_note_must_contain_total():
     assert any("budget_note" in p for p in problems)
 
 
-def test_visa_note_must_say_verify_when_mock():
+def test_visa_note_must_say_verify():
     problems = check_itinerary(_itinerary(visa_note="Visa free for 90 days."), _ctx())
     assert any("visa_note" in p for p in problems)
     assert check_itinerary(_itinerary(visa_note="Visa free for 90 days."), _ctx(visa_needs_verification=False)) == []
@@ -69,6 +72,38 @@ def test_visa_note_must_say_verify_when_mock():
 def test_invented_preference_is_flagged():
     problems = check_itinerary(_itinerary(summary="No day trips, as per your preference."), _ctx())
     assert any("preference" in p for p in problems)
+
+
+def test_repeated_place_is_flagged_across_meal_labels():
+    days = _days(
+        ["Lunch at Marumaru Seimen"],
+        ["Dinner at Marumaru Seimen (Marumaru Noodle Shop)"],
+    )
+    problems = check_itinerary(_itinerary(days=days), _ctx())
+    assert any("repeats an earlier activity" in p for p in problems)
+
+
+def test_repeated_free_time_and_hotel_lines_are_allowed():
+    days = _days(
+        ["Arrival at KIX", "Free time", "Check in at Sample Kyoto Guesthouse"],
+        ["Free time", "Check out of Sample Kyoto Guesthouse", "Departure flight"],
+    )
+    assert check_itinerary(_itinerary(days=days), _ctx()) == []
+
+
+def test_leaked_reasoning_is_flagged():
+    days = _days(
+        ["Dinner at Nouvelle Bar (to fill meal options, as no repeats allowed, adjusted to free time)"],
+        ["Depart"],
+    )
+    problems = check_itinerary(_itinerary(days=days), _ctx())
+    assert any("no repeat" in p or "adjusted to" in p for p in problems)
+
+
+def test_source_endorsement_is_flagged():
+    note = "Visa free. Orizn is reliable. Please verify on the official site."
+    problems = check_itinerary(_itinerary(visa_note=note), _ctx())
+    assert any("reliable" in p for p in problems)
 
 
 def test_output_guardrail_function_trips_on_problems():

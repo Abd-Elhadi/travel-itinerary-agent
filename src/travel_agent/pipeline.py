@@ -119,6 +119,7 @@ async def build_plan(
                 requirement="unknown", allowed_days=None,
                 summary="Visa check failed. Verify on the destination's official government site.",
                 source="mock",
+                visa_needs_verification=True,
             ),
             warnings,
         )
