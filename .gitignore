@@ -7,3 +7,6 @@ __pycache__/
 main-*.ipynb
 data/cache/
 data/sessions.db
+
+data/sessions.db-shm
+data/sessions.db-wal
