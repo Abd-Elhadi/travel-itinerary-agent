@@ -7,60 +7,78 @@ import pycountry
 from agents import function_tool
 
 BASE_URL = "https://visa.orizn.app/api/v1/visa/check"
-MOCK_PATH = Path(__file__).resolve().parents[3] / "data" / "mock" / "visa.json"
-_cache: dict[str, dict] = {}
+ROOT = Path(__file__).resolve().parents[3]
+MOCK_PATH = ROOT / "data" / "mock" / "visa.json"
+CACHE_PATH = ROOT / "data" / "cache" / "visa.json"  # keep in .gitignore
 
 
 def to_iso3(value: str) -> str:
     return pycountry.countries.lookup(value.strip()).alpha_3
 
 
-def _unknown(passport: str, destination: str, **extra) -> dict:
+def _read_json(path: Path) -> dict:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def _write_cache(key: str, value: dict) -> None:
+    cache = _read_json(CACHE_PATH)
+    cache[key] = value
+    CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    CACHE_PATH.write_text(json.dumps(cache, indent=2), encoding="utf-8")
+
+
+def _unknown(passport: str, destination: str, reason: str) -> dict:
     return {
         "passport": passport,
         "destination": destination,
         "requirement": "unknown",
         "visa_free_days": None,
         "source": "mock",
-        **extra,
+        "fallback_reason": reason,
     }
 
 
-def _mock(passport: str, destination: str) -> dict:
-    try:
-        data = json.loads(MOCK_PATH.read_text())
-    except FileNotFoundError:
-        data = {}
-    hit = data.get(f"{passport}-{destination}")
-    return {**hit, "source": "mock"} if hit else _unknown(passport, destination)
+def _mock(passport: str, destination: str, reason: str) -> dict:
+    hit = _read_json(MOCK_PATH).get(f"{passport}-{destination}")
+    if hit:
+        return {**hit, "source": "mock", "fallback_reason": reason}
+    return _unknown(passport, destination, reason)
 
 
 def check_visa_raw(passport: str, destination: str) -> dict:
     try:
         passport, destination = to_iso3(passport), to_iso3(destination)
     except LookupError:
-        return _unknown(passport, destination, error="Country not recognized")
+        return _unknown(passport, destination, "Country not recognized")
 
-    cache_key = f"{passport}-{destination}"
-    if cache_key in _cache:
-        return _cache[cache_key]
+    key = f"{passport}-{destination}"
+    cached = _read_json(CACHE_PATH).get(key)
+    if cached:
+        return cached  # saves the free-tier quota across runs
 
     api_key = os.getenv("ORIZN_API_KEY")
-    if api_key:
-        try:
-            r = httpx.get(
-                BASE_URL,
-                params={"passport": passport, "destination": destination},
-                headers={"x-api-key": api_key},
-                timeout=15,
-            )
-            r.raise_for_status()
-            result = {**r.json(), "source": "orizn_api"}
-            _cache[cache_key] = result
-            return result
-        except httpx.HTTPError:
-            pass
-    return _mock(passport, destination)
+    if not api_key:
+        return _mock(passport, destination, "ORIZN_API_KEY is missing")
+
+    try:
+        r = httpx.get(
+            BASE_URL,
+            params={"passport": passport, "destination": destination},
+            headers={"x-api-key": api_key},
+            timeout=15,
+        )
+        r.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        return _mock(passport, destination, f"Orizn returned HTTP {exc.response.status_code}")
+    except httpx.HTTPError:
+        return _mock(passport, destination, "Orizn network error or timeout")
+
+    result = {**r.json(), "source": "orizn_api"}
+    _write_cache(key, result)
+    return result
 
 
 @function_tool
