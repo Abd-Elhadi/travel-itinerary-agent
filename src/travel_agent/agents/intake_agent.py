@@ -3,6 +3,7 @@ from datetime import date
 from agents import Agent
 
 from travel_agent.config import MODEL
+from travel_agent.guardrails import travel_input_guardrail
 from travel_agent.models import IntakeResult
 
 INSTRUCTIONS = f"""You are the intake agent of a travel planning assistant. Today is {date.today().isoformat()}.
@@ -24,4 +25,5 @@ intake_agent = Agent(
     instructions=INSTRUCTIONS,
     model=MODEL,
     output_type=IntakeResult,
+    input_guardrails=[travel_input_guardrail],
 )
