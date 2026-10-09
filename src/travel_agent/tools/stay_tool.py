@@ -1,6 +1,6 @@
 import json
-from pathlib import Path
 import math
+from pathlib import Path
 
 from agents import function_tool
 
@@ -9,18 +9,20 @@ MOCK_PATH = Path(__file__).resolve().parents[3] / "data" / "mock" / "stays.json"
 
 
 def search_stays_raw(destination: str, nights: int, travelers: int) -> dict:
-    """Load mock accommodation options and calculate full-trip costs."""
+    """Load mock accommodation options, price the full trip, and sort cheapest first."""
 
     try:
         data = json.loads(MOCK_PATH.read_text(encoding="utf-8"))
     except (FileNotFoundError, json.JSONDecodeError):
         data = {}
 
-    options = data.get(destination, data.get("default", []))
+    lookup = {key.lower(): value for key, value in data.items()}
+    options = lookup.get(destination.strip().lower(), lookup.get("default", []))
+
+    rooms = math.ceil(travelers / 2)
     results = []
 
     for option in options:
-        rooms = math.ceil(travelers / 2)
         total_cost = round(option["nightly_price_usd"] * nights * rooms, 2)
 
         results.append(
@@ -33,11 +35,15 @@ def search_stays_raw(destination: str, nights: int, travelers: int) -> dict:
             }
         )
 
+    # Sort in code so the base city does not depend on the LLM.
+    results.sort(key=lambda r: r["total_cost_usd"])
+
     return {
         "source": "mock",
         "destination": destination,
         "nights": nights,
         "travelers": travelers,
+        "rooms": rooms,
         "options": results,
     }
 
