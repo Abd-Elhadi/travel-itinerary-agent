@@ -1,7 +1,7 @@
 import asyncio
 import json
 
-from agents import Runner, trace
+from agents import OutputGuardrailTripwireTriggered, Runner, trace
 
 from travel_agent.agents.activities_agent import run_activities_agent
 from travel_agent.agents.planner_agent import planner_agent
@@ -10,6 +10,7 @@ from travel_agent.agents.transport_agent import transport_agent
 from travel_agent.agents.visa_agent import visa_agent
 from travel_agent.airports import AirportNotFound, resolve_airport
 from travel_agent.budget import build_budget_report
+from travel_agent.guardrails import PlanContext
 from travel_agent.models import (
     ActivityPlan,
     Itinerary,
@@ -24,6 +25,7 @@ REQUIRED = [
     "trip_type", "passport_country", "origin", "destination",
     "start_date", "end_date", "num_days", "travelers", "budget_usd",
 ]
+MAX_PLANNER_ATTEMPTS = 2
 
 
 def _check(trip: TripRequest) -> None:
@@ -62,9 +64,22 @@ async def _transport(
     return result.final_output
 
 
-async def _plan(payload: dict) -> Itinerary:
-    result = await Runner.run(planner_agent, json.dumps(payload))
-    return result.final_output
+async def _plan(payload: dict, ctx: PlanContext, warnings: list[str]) -> Itinerary:
+    """Run the Planner. If the output guardrail fails, retry once with the problems listed."""
+    last_problems: list[str] = []
+    last_output: Itinerary | None = None
+
+    for _ in range(MAX_PLANNER_ATTEMPTS):
+        try:
+            result = await Runner.run(planner_agent, json.dumps(payload), context=ctx)
+            return result.final_output
+        except OutputGuardrailTripwireTriggered as exc:
+            last_output = exc.guardrail_result.agent_output
+            last_problems = exc.guardrail_result.output.output_info["problems"]
+            payload = {**payload, "fix_these_problems": last_problems}
+
+    warnings.append("Itinerary failed checks after retry: " + " | ".join(last_problems))
+    return last_output
 
 
 def _unwrap(result, name: str, default, warnings: list[str]):
@@ -131,7 +146,14 @@ async def build_plan(
 
         budget = build_budget_report(trip, transport, stay, activities)
 
-        # Stage 3: planner writes the itinerary from verified pieces.
+        # Stage 3: planner writes the itinerary; the output guardrail checks it.
+        ctx = PlanContext(
+            num_days=trip.num_days,
+            base_city=base_city,
+            total_usd=budget.total_usd,
+            visa_needs_verification=visa.source == "mock" or visa.requirement == "unknown",
+            other_stay_names=[o.name for o in stay.options[1:]],
+        )
         itinerary = await _plan(
             {
                 "trip": trip.model_dump(),
@@ -141,7 +163,9 @@ async def build_plan(
                 "stay": stay.model_dump(),
                 "budget": budget.model_dump(),
                 "warnings": warnings,
-            }
+            },
+            ctx,
+            warnings,
         )
 
     return TripPlan(
