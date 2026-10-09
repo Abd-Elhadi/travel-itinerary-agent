@@ -23,3 +23,11 @@ async def test_illegal_request_is_blocked():
 async def test_travel_request_passes():
     result = await Runner.run(intake_agent, "I want to visit Japan for 7 days with 2 friends.")
     assert result.final_output.trip.destination
+
+
+@pytest.mark.live
+@pytest.mark.asyncio
+@pytest.mark.parametrize("reply", ["3 people", "France", "yes", "business"])
+async def test_short_replies_are_not_blocked(reply):
+    # With sessions, the guardrail may see only the latest message.
+    await Runner.run(intake_agent, reply)
