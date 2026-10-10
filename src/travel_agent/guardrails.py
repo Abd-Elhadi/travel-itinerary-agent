@@ -70,6 +70,7 @@ class PlanContext:
     total_usd: float
     visa_needs_verification: bool
     other_stay_names: list[str] = field(default_factory=list)
+    city_plan: list[str] = field(default_factory=list)
 
 
 # Text that leaks the model's reasoning or makes claims nobody supplied.
@@ -104,7 +105,19 @@ def check_itinerary(itinerary: Itinerary, ctx: PlanContext) -> list[str]:
     if numbers != list(range(1, len(numbers) + 1)):
         problems.append("Day numbers must run 1, 2, 3 in order.")
 
-    if ctx.base_city:
+    if ctx.city_plan:
+        mismatches = []
+        for day in itinerary.days:
+            if day.day < 1 or day.day > len(ctx.city_plan):
+                continue
+            expected = ctx.city_plan[day.day - 1]
+            if day.city.strip().lower() != expected.strip().lower():
+                mismatches.append(f"day {day.day} is {day.city}, expected {expected}")
+        if mismatches:
+            problems.append(
+                "Days must follow the city plan in order: " + "; ".join(mismatches) + "."
+            )
+    elif ctx.base_city:
         base = ctx.base_city.strip().lower()
         wrong = sorted({d.city for d in itinerary.days if d.city.strip().lower() != base})
         if wrong:

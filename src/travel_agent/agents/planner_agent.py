@@ -4,7 +4,7 @@ from travel_agent.config import MODEL
 from travel_agent.guardrails import PlanContext, itinerary_guardrail
 from travel_agent.models import Itinerary
 
-INSTRUCTIONS = """You are the planner agent. Input: JSON with trip, visa, activities, transport, stay, budget, and warnings. It may also include fix_these_problems, a list of mistakes in your previous attempt. Fix every one of them.
+INSTRUCTIONS = """You are the planner agent. Input: JSON with trip, visa, activities, transport, stay, budget, warnings, and city_plan (one city name per day, in visit order). It may also include fix_these_problems, a list of mistakes in your previous attempt. Fix every one of them.
 1. Build a day-by-day itinerary. The number of days equals trip.num_days. Use trip dates if present.
 2. Use only activities, stays, and transport from the input. Do not invent places, prices, or transfers.
 3. Use the first stay option for all nights. Other stay options are alternatives. Never mention them.

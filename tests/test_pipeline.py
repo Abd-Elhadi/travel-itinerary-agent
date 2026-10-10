@@ -4,10 +4,11 @@ from types import SimpleNamespace
 from agents import GuardrailFunctionOutput, OutputGuardrailTripwireTriggered
 from agents.guardrail import OutputGuardrailResult
 
+from travel_agent import airports as airports_mod
 from travel_agent import pipeline
 from travel_agent.agents.planner_agent import planner_agent
 from travel_agent.guardrails import PlanContext, itinerary_guardrail
-from travel_agent.models import Itinerary, VisaResult
+from travel_agent.models import Itinerary, StayOption, StayPlan, VisaResult
 
 VISA = VisaResult(passport="FRA", destination="JPN", requirement="visa_free",
                   allowed_days=90, summary="ok", source="mock")
@@ -18,8 +19,10 @@ BAD = Itinerary(title="bad", summary="s", visa_note="v", days=[], budget_note="b
 def _patch(monkeypatch, transport, stay, activities, captured):
     async def visa(trip): return VISA
 
-    async def acts(trip, base_city):
-        captured["base_city"] = base_city
+    async def acts(trip, cities, days_per_city=None):
+        captured["cities"] = cities
+        captured["days_per_city"] = days_per_city
+        captured["base_city"] = cities[0] if cities else None
         return activities
 
     async def tr(trip, o, d): return transport
@@ -36,6 +39,15 @@ def _patch(monkeypatch, transport, stay, activities, captured):
     monkeypatch.setattr(pipeline, "_transport", tr)
     monkeypatch.setattr(pipeline, "_stay", st)
     monkeypatch.setattr(pipeline, "_plan", plan)
+    monkeypatch.setattr(
+        airports_mod,
+        "_geocode",
+        lambda place: {
+            "miami": (25.7617, -80.1918),
+            "japan": (35.6762, 139.6503),
+            "kathmandu": (27.7172, 85.3240),
+        }.get(place.lower()),
+    )
 
 
 def test_happy_path(monkeypatch, trip, transport, stay, activities):
@@ -57,6 +69,7 @@ def test_planner_context_is_built_from_results(monkeypatch, trip, transport, sta
     assert ctx.total_usd == 5475
     assert ctx.visa_needs_verification is True   # VISA source is mock
     assert ctx.other_stay_names == ["h2"]
+    assert ctx.city_plan == ["Kyoto"] * 7
 
 
 def test_planner_payload_has_formatted_budget(monkeypatch, trip, transport, stay, activities):
@@ -71,6 +84,7 @@ def test_activities_use_stay_city(monkeypatch, trip, transport, stay, activities
     captured = {}
     _patch(monkeypatch, transport, stay, activities, captured)
     asyncio.run(pipeline.build_plan(trip))
+    assert captured["cities"] == ["Kyoto"]
     assert captured["base_city"] == "Kyoto"
 
 
@@ -84,7 +98,7 @@ def test_stay_failure_degrades(monkeypatch, trip, transport, stay, activities):
 
     result = asyncio.run(pipeline.build_plan(trip))
     assert result.stay.options == []
-    assert captured["base_city"] is None
+    assert captured["cities"] == ["Japan"]
     assert any("Stay failed" in w for w in result.warnings)
     assert any("excludes accommodation" in w for w in result.warnings)
     assert captured["warnings"] == result.warnings
@@ -94,13 +108,35 @@ def test_activities_failure_degrades(monkeypatch, trip, transport, stay, activit
     captured = {}
     _patch(monkeypatch, transport, stay, activities, captured)
 
-    async def broken(trip, base_city): raise RuntimeError("boom")
+    async def broken(trip, cities, days_per_city=None): raise RuntimeError("boom")
 
     monkeypatch.setattr(pipeline, "_activities", broken)
 
     result = asyncio.run(pipeline.build_plan(trip))
     assert result.activities.activities == []
     assert any("Activities failed" in w for w in result.warnings)
+
+
+def test_two_city_destination_builds_city_plan(monkeypatch, trip, transport, stay, activities):
+    captured = {}
+    stay = StayPlan(
+        options=[
+            StayOption(name="KTM Hotel", area="Kathmandu", total_cost_usd=720, why="w", is_estimate=True),
+            StayOption(name="PKR Hotel", area="Pokhara", total_cost_usd=720, why="w", is_estimate=True),
+        ],
+        notes="",
+    )
+    _patch(monkeypatch, transport, stay, activities, captured)
+    trip.destination = "Kathmandu, Pokhara"
+    result = asyncio.run(pipeline.build_plan(trip))
+    ctx = captured["ctx"]
+    assert captured["cities"] == ["Kathmandu", "Pokhara"]
+    assert captured["days_per_city"] == [4, 3]
+    assert ctx.city_plan == ["Kathmandu"] * 4 + ["Pokhara"] * 3
+    assert ctx.other_stay_names == []
+    assert ctx.base_city == "Kathmandu"
+    assert result.budget.stay_usd == 1440
+    assert captured["city_plan"] == ctx.city_plan
 
 
 def test_unknown_airport_adds_warning(monkeypatch, trip, transport, stay, activities):
