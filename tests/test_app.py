@@ -129,7 +129,7 @@ def test_build_saves_memory_and_renders(monkeypatch, tmp_path, trip, transport, 
     state = {**app.new_state(), "trip": trip.model_dump()}
 
     async def collect():
-        return [u async for u in app.handle_build(state, "omar", store)]
+        return [u async for u in app.handle_build(state, "omar", "", False, store)]
 
     updates = asyncio.run(collect())
     assert "Planning your trip" in updates[0][0]
@@ -148,7 +148,7 @@ def test_build_failure_is_shown_not_raised(monkeypatch, tmp_path, trip):
     state = {**app.new_state(), "trip": trip.model_dump()}
 
     async def collect():
-        return [u async for u in app.handle_build(state, "omar", store)]
+        return [u async for u in app.handle_build(state, "omar", "", False, store)]
 
     updates = asyncio.run(collect())
     assert "Planning failed: RuntimeError: boom" in updates[-1][0]
@@ -158,7 +158,7 @@ def test_build_without_trip_asks_to_finish_chat(tmp_path):
     store = ProfileStore(tmp_path / "memory.db")
 
     async def collect():
-        return [u async for u in app.handle_build(app.new_state(), "omar", store)]
+        return [u async for u in app.handle_build(app.new_state(), "omar", "", False, store)]
 
     updates = asyncio.run(collect())
     assert "Finish the trip details" in updates[0][0]

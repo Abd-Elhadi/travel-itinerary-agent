@@ -17,6 +17,9 @@ def _use_data(monkeypatch, tmp_path):
     path = tmp_path / "stays.json"
     path.write_text(json.dumps(DATA), encoding="utf-8")
     monkeypatch.setattr(stay_tool, "MOCK_PATH", path)
+    monkeypatch.delenv("GEOAPIFY_API_KEY", raising=False)
+    monkeypatch.delenv("GEOAPIFY_KEY", raising=False)
+    monkeypatch.setattr(stay_tool, "fetch_live_geoapify_stays", lambda **k: [])
 
 
 def test_sorted_cheapest_first_and_rooms_scale(monkeypatch, tmp_path):

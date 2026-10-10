@@ -1,7 +1,9 @@
 from unittest.mock import patch
-from src.travel_agent.rag.manager import GlobalRAGManager
 
-@patch("src.travel_agent.rag.manager.DDGS")
+from travel_agent.rag.manager import GlobalRAGManager
+
+
+@patch("travel_agent.rag.manager.DDGS")
 def test_global_rag_flow(mock_ddgs_class, tmp_path):
     # Mock DDGS text search response
     mock_instance = mock_ddgs_class.return_value
@@ -17,7 +19,7 @@ def test_global_rag_flow(mock_ddgs_class, tmp_path):
     contexts = rag.query_destination_context(destination="Reykjavik", query="best food spots and geothermal baths")
     assert isinstance(contexts, list)
     assert len(contexts) > 0
-    
+
     # Order-agnostic check across returned contexts
     combined_context = " ".join(contexts)
     assert "Blue Lagoon" in combined_context
