@@ -1,3 +1,4 @@
+from travel_agent.cities import parse_cities
 from travel_agent.models import (
     ActivityPlan,
     BudgetReport,
@@ -37,8 +38,12 @@ def build_budget_report(
     )
 
     stay_usd = 0.0
-    if stay.options and stay.options[0].total_cost_usd is not None:
-        stay_usd = stay.options[0].total_cost_usd
+    multi_city = len(parse_cities(trip.destination)) > 1
+    if stay.options:
+        if multi_city:
+            stay_usd = sum(o.total_cost_usd or 0.0 for o in stay.options)
+        elif stay.options[0].total_cost_usd is not None:
+            stay_usd = stay.options[0].total_cost_usd
 
     activities_usd = travelers * sum(
         a.estimated_cost_usd or 0.0

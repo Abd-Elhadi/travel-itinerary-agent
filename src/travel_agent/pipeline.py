@@ -10,6 +10,7 @@ from travel_agent.agents.transport_agent import transport_agent
 from travel_agent.agents.visa_agent import visa_agent
 from travel_agent.airports import AirportNotFound, resolve_airport
 from travel_agent.budget import build_budget_report
+from travel_agent.cities import allocate_parts, expand_city_plan, parse_cities
 from travel_agent.guardrails import PlanContext
 from travel_agent.models import (
     ActivityPlan,
@@ -40,8 +41,12 @@ async def _visa(trip: TripRequest) -> VisaResult:
     return result.final_output
 
 
-async def _activities(trip: TripRequest, base_city: str | None) -> ActivityPlan:
-    return await run_activities_agent(trip, base_city)
+async def _activities(
+    trip: TripRequest,
+    cities: list[str],
+    days_per_city: list[int] | None = None,
+) -> ActivityPlan:
+    return await run_activities_agent(trip, cities=cities, days_per_city=days_per_city)
 
 
 async def _stay(trip: TripRequest) -> StayPlan:
@@ -128,10 +133,21 @@ async def build_plan(
         )
         stay = _unwrap(stay_r, "Stay", StayPlan(options=[], notes="Stay search failed."), warnings)
 
-        # Stage 2: activities depend on where the traveler sleeps.
-        base_city = stay.options[0].area if stay.options else None
+        parsed_cities = parse_cities(trip.destination)
+        multi_city = len(parsed_cities) > 1
+        if multi_city:
+            stay_cities = parsed_cities
+        elif stay.options:
+            stay_cities = [stay.options[0].area]
+        else:
+            stay_cities = parsed_cities
+
+        days_per_city = allocate_parts(trip.num_days or 1, max(len(stay_cities), 1))
+        city_plan = expand_city_plan(stay_cities, trip.num_days or 1)
+        base_city = stay_cities[0] if stay_cities else None
+
         try:
-            activities = await _activities(trip, base_city)
+            activities = await _activities(trip, stay_cities, days_per_city)
         except Exception as exc:
             warnings.append(f"Activities failed: {type(exc).__name__}: {exc}")
             activities = ActivityPlan(
@@ -147,13 +163,16 @@ async def build_plan(
 
         budget = build_budget_report(trip, transport, stay, activities)
 
+        other_stay_names = [] if multi_city else [o.name for o in stay.options[1:]]
+
         # Stage 3: planner writes the itinerary; the output guardrail checks it.
         ctx = PlanContext(
             num_days=trip.num_days,
             base_city=base_city,
             total_usd=budget.total_usd,
             visa_needs_verification=visa.source == "mock" or visa.requirement == "unknown",
-            other_stay_names=[o.name for o in stay.options[1:]],
+            other_stay_names=other_stay_names,
+            city_plan=city_plan,
         )
         itinerary = await _plan(
             {
@@ -164,6 +183,7 @@ async def build_plan(
                 "stay": stay.model_dump(),
                 "budget": budget.model_dump(),
                 "warnings": warnings,
+                "city_plan": city_plan,
             },
             ctx,
             warnings,

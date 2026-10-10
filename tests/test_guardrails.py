@@ -52,6 +52,26 @@ def test_wrong_city():
     assert any("Tokyo" in p for p in problems)
 
 
+def test_city_plan_requires_planned_order():
+    ctx = _ctx(
+        num_days=4,
+        city_plan=["Kathmandu", "Kathmandu", "Pokhara", "Pokhara"],
+        other_stay_names=[],
+    )
+    days = [
+        DayPlan(day=1, date=None, city="Kathmandu", items=["Arrive"]),
+        DayPlan(day=2, date=None, city="Kathmandu", items=["Temple"]),
+        DayPlan(day=3, date=None, city="Pokhara", items=["Lake"]),
+        DayPlan(day=4, date=None, city="Pokhara", items=["Depart"]),
+    ]
+    assert check_itinerary(_itinerary(days=days), ctx) == []
+
+    bad_days = list(days)
+    bad_days[2] = DayPlan(day=3, date=None, city="Baudha", items=["Lake"])
+    problems = check_itinerary(_itinerary(days=bad_days), ctx)
+    assert any("Baudha" in p and "Pokhara" in p for p in problems)
+
+
 def test_alternative_hotel_mentioned():
     days = _days(["Check in at Sample Tokyo City Hotel"], ["Depart"])
     problems = check_itinerary(_itinerary(days=days), _ctx())
