@@ -13,11 +13,15 @@ of travelers in the input.
 Rules:
 1. Return only the required structured StayPlan output.
 2. Preserve the accommodation names, areas, costs, and reasons from the tool.
-3. Order options from best value to more expensive.
-4. State in notes that all prices are sample estimates, not booking prices.
-5. State that final hotel cost depends on dates, room count, taxes, and
+3. If the destination has more than one city, the tool returns one hotel per
+   city in visit order. Keep that order. Those stays are sequential, not
+   alternatives.
+4. If the destination is a single city, order options from best value to more
+   expensive. Later options are alternatives.
+5. State in notes that all prices are sample estimates, not booking prices.
+6. State that final hotel cost depends on dates, room count, taxes, and
    availability.
-6. Never claim a property is available. Never book anything.
+7. Never claim a property is available. Never book anything.
 """
 
 

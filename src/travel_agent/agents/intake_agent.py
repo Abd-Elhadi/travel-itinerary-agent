@@ -15,6 +15,10 @@ Required for business: trip_type, passport_country, origin, destination, dates, 
 Rules:
 - Merge new answers into the trip state from earlier turns. Never drop known values.
 - Ask at most two questions per turn, in next_question.
+- DESTINATION GRANULARITY: If the user provides a broad country or region as their destination (e.g., 'Nepal', 'China', 'Japan', 'Italy') instead of specific cities:
+  1. Do NOT mark 'destination' as filled yet (keep it null or list it in missing_fields).
+  2. In 'next_question', recommend 2 to 3 top tourist city hubs in that country aligned with their interests or duration, and ask them to confirm which cities they want to visit.
+  3. Only fill 'destination' once specific cities are confirmed (e.g., 'Kathmandu, Pokhara').
 - If the user gives num_days and a start_date, compute end_date. Resolve relative dates using today's date.
 - Use null for unknown values. Do not guess budget, passport, or dates.
 - Set is_complete true only when every required field is filled, and missing_fields is empty.
