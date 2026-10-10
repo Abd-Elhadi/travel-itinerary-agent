@@ -119,7 +119,6 @@ async def build_plan(
                 requirement="unknown", allowed_days=None,
                 summary="Visa check failed. Verify on the destination's official government site.",
                 source="mock",
-                visa_needs_verification=True,
             ),
             warnings,
         )
@@ -147,12 +146,17 @@ async def build_plan(
 
         budget = build_budget_report(trip, transport, stay, activities)
 
+        budget_display = {
+            key: (f"${value:,.2f}" if isinstance(value, float) else value)
+            for key, value in budget.model_dump().items()
+        }
+
         # Stage 3: planner writes the itinerary; the output guardrail checks it.
         ctx = PlanContext(
             num_days=trip.num_days,
             base_city=base_city,
             total_usd=budget.total_usd,
-            visa_needs_verification=visa.source == "mock" or visa.requirement == "unknown",
+            visa_needs_verification=True,
             other_stay_names=[o.name for o in stay.options[1:]],
         )
         itinerary = await _plan(
@@ -163,6 +167,7 @@ async def build_plan(
                 "transport": transport.model_dump(),
                 "stay": stay.model_dump(),
                 "budget": budget.model_dump(),
+                "budget_display": budget_display,
                 "warnings": warnings,
             },
             ctx,

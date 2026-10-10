@@ -59,6 +59,14 @@ def test_planner_context_is_built_from_results(monkeypatch, trip, transport, sta
     assert ctx.other_stay_names == ["h2"]
 
 
+def test_planner_payload_has_formatted_budget(monkeypatch, trip, transport, stay, activities):
+    captured = {}
+    _patch(monkeypatch, transport, stay, activities, captured)
+    asyncio.run(pipeline.build_plan(trip))
+    assert captured["budget_display"]["total_usd"] == "$5,475.00"
+    assert captured["budget_display"]["within_budget"] is True
+
+
 def test_activities_use_stay_city(monkeypatch, trip, transport, stay, activities):
     captured = {}
     _patch(monkeypatch, transport, stay, activities, captured)
