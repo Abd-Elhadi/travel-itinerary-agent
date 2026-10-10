@@ -140,6 +140,14 @@ def check_itinerary(itinerary: Itinerary, ctx: PlanContext) -> list[str]:
                 problems.append(f"'{item}' repeats an earlier activity. Use free time instead.")
             seen.add(key)
 
+    # Free time must be one clean line per day, never "Visit Free time".
+    for d in itinerary.days:
+        free_lines = [i for i in d.items if "free time" in i.lower()]
+        if len(free_lines) > 1:
+            problems.append(f"Day {d.day} has {len(free_lines)} free time lines. Use one.")
+        if any(i.lower().startswith("visit free") for i in d.items):
+            problems.append(f"Day {d.day}: write 'Free time to explore on your own', not 'Visit Free time'.")
+
     note = itinerary.budget_note.replace(",", "")
     candidates = {str(int(ctx.total_usd)), str(int(round(ctx.total_usd)))}
     if not any(c in note for c in candidates):

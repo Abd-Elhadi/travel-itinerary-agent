@@ -10,3 +10,7 @@ data/sessions.db
 
 data/sessions.db-shm
 data/sessions.db-wal
+
+data/memory.db
+data/sessions.db
+data/cache/.

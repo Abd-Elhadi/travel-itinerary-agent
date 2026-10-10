@@ -136,3 +136,20 @@ def test_output_guardrail_function_trips_on_problems():
 def test_guardrails_are_attached():
     assert len(intake_agent.input_guardrails) == 1
     assert len(planner_agent.output_guardrails) == 1
+
+
+def test_two_free_time_lines_in_one_day_are_flagged():
+    days = _days(["Free time", "Free time"], ["Depart"])
+    problems = check_itinerary(_itinerary(days=days), _ctx())
+    assert any("free time lines" in p for p in problems)
+
+
+def test_visit_free_time_is_flagged():
+    days = _days(["Visit Free time"], ["Depart"])
+    problems = check_itinerary(_itinerary(days=days), _ctx())
+    assert any("Visit Free time" in p for p in problems)
+
+
+def test_formatted_budget_number_passes_check():
+    note = "The total of $4,380.00 is within your $6,000.00 budget."
+    assert check_itinerary(_itinerary(budget_note=note), _ctx()) == []

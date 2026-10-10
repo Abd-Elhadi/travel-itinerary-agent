@@ -124,7 +124,6 @@ async def build_plan(
                 requirement="unknown", allowed_days=None,
                 summary="Visa check failed. Verify on the destination's official government site.",
                 source="mock",
-                visa_needs_verification=True,
             ),
             warnings,
         )
@@ -182,6 +181,7 @@ async def build_plan(
                 "transport": transport.model_dump(),
                 "stay": stay.model_dump(),
                 "budget": budget.model_dump(),
+                "budget_display": budget_display,
                 "warnings": warnings,
                 "city_plan": city_plan,
             },
