@@ -21,6 +21,7 @@ from travel_agent.models import (
     TripRequest,
     VisaResult,
 )
+from travel_agent.render import _usd
 
 REQUIRED = [
     "trip_type", "passport_country", "origin", "destination",
@@ -161,6 +162,11 @@ async def build_plan(
             warnings.append("No activities found. Itinerary will mostly be free time.")
 
         budget = build_budget_report(trip, transport, stay, activities)
+        raw_budget = budget.model_dump()
+        budget_display = {
+            **raw_budget,
+            **{k: _usd(v) for k, v in raw_budget.items() if k.endswith("_usd")},
+        }
 
         other_stay_names = [] if multi_city else [o.name for o in stay.options[1:]]
 
